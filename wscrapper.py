@@ -42,18 +42,15 @@ def choose_city(city):
     print('clicked city select')
     print(el.text)
     driver.implicitly_wait(10)
-    cities_list_el = driver.find_elements(By.CLASS_NAME, 'Oo')  #TODO change it
+    cities_list_el = driver.find_elements(By.CSS_SELECTOR, 'body > div > div > div > section > div > ul > li > ul > li')
     for option in cities_list_el:
-        print(option.text)
         if option.text == city:
-            option.click()  
-            print(option.text)
+            option.click()
             break
         else:
             print('error')
-            print(option.text)
     driver.implicitly_wait(10)
-    print("i work")
+    print("city now", el.text)
     return
 
 def get_page_count():
@@ -110,7 +107,7 @@ def scrape_data(card, city):
         else: 
             price = prices[0]
             price_discount = None
-        print(title)
+        # print(title)
         
         data = {'title': title, 'link': link, 'id': id, 'city': city, 'price': price, 'price_discount': price_discount}
         
@@ -129,6 +126,7 @@ def main():
         soup = BeautifulSoup(html, 'lxml')
         # main_cards = soup.select()
         cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
+        print(len(cards))
         for card in cards:
             data = scrape_data(card, spb)
             product_data.append(data)
@@ -140,11 +138,12 @@ def main():
         soup = BeautifulSoup(html, 'lxml')
         # main_cards = soup.select()
         cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
+        print(len(cards))
         for card in cards:
             data = scrape_data(card, msc)
             product_data.append(data)
     data = [el for el in product_data if el != {}]
-    print(data)
+    # print(data)
     write_csv(data)
         
     
