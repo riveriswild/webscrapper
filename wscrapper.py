@@ -8,6 +8,10 @@ from bs4 import BeautifulSoup
 import re
 import unicodedata
 
+
+spb = 'Санкт-Петербург и Ленинградская область'  
+msc = 'Москва и Московская область'
+
 def write_csv(products):
     """ generate csv file
 
@@ -91,33 +95,28 @@ def scrape_data(card, city):
         dict: parsed data of a single product
     """    
     data = {}
-    if not "LEGO" in card.p.text:   # cheating! and also bad for performance
-        pass
-    else:
-        title = card.p.text
-        city = city
-        link = card.get('href')
-        id = link.strip('/').split('/')[-1]
-        # id = re.findall('\d+', link)   # possible but gives a ['id'] 
-        prices_raw = card.select_one('a > div > div > div:nth-child(2) > div > div').text  #TODO put it in try-except
-        prices = unicodedata.normalize("NFKD", prices_raw).strip('').split(' ₽')  # ['249', ''] why??
-        if len(prices) == 3:
-            price = prices[1]
-            price_discount = prices[0]
-        else: 
-            price = prices[0]
-            price_discount = None
-        # print(title)
-        
-        data = {'title': title, 'link': link, 'id': id, 'city': city, 'price': price, 'price_discount': price_discount}
+    title = card.p.text
+    city = city
+    link = card.get('href')
+    id = link.strip('/').split('/')[-1]
+    # id = re.findall('\d+', link)   # possible but gives a ['id'] 
+    prices_raw = card.select_one('a > div > div > div:nth-child(2) > div > div').text  #TODO put it in try-except
+    prices = unicodedata.normalize("NFKD", prices_raw).strip('').split(' ₽')  # ['249', ''] why??
+    if len(prices) == 3:
+        price = prices[1]
+        price_discount = prices[0]
+    else: 
+        price = prices[0]
+        price_discount = None
+    print(title)
+    
+    data = {'title': title, 'link': link, 'id': id, 'city': city, 'price': price, 'price_discount': price_discount}
         
     return data
     
     
 def main():  
     product_data = []
-    spb = 'Санкт-Петербург и Ленинградская область'  
-    msc = 'Москва и Московская область'
     choose_city(spb)
     count = get_page_count()
     for i in range(4, 5):   # TODO: change
@@ -136,15 +135,15 @@ def main():
         url = f'https://www.detmir.ru/catalog/index/name/lego/page/{i}/'
         html = get_html(url)
         soup = BeautifulSoup(html, 'lxml')
-        # main_cards = soup.select()
-        cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
-        print(len(cards))
-        for card in cards:
-            data = scrape_data(card, msc)
-            product_data.append(data)
-    data = [el for el in product_data if el != {}]
+        cards = soup.select('#app-container > div.p > main > div > div > div > div > div > div > div > div > div > div > div > a')
+        # cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
+        cards_clean = [card for card in cards if 'LEGO' in card.text] # TODO still bad for performance but a bit better; fix if possible
+        for card in cards_clean:   
+                data = scrape_data(card, msc)
+                product_data.append(data)
+    # data = [el for el in product_data if el != {}]
     # print(data)
-    write_csv(data)
+    write_csv(product_data)
         
     
 
