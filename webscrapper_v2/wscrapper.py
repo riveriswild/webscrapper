@@ -44,10 +44,10 @@ def choose_city(city):
         city (str): city name
     """    
     el = driver.find_element(By.XPATH,
+            print(count)
                             '//*[@id="app-container"]/div[2]/header/div[2]/div/div[1]/ul/li[1]/div/div/div[1]/div/span')
     el.click()
-    print('clicked city select')
-    print(el.text)
+    print('Выбираю город...')
     driver.implicitly_wait(10)
     cities_list_el = driver.find_elements(By.CSS_SELECTOR, 'body > div > div > div > section > div > ul > li > ul > li')
     for option in cities_list_el:
@@ -57,7 +57,7 @@ def choose_city(city):
         else:
             print('error')
     driver.implicitly_wait(10)
-    print("city now", el.text)
+    print("Выбран город:", el.text)
     return
 
 def get_page_count():
@@ -68,12 +68,10 @@ def get_page_count():
         int: number of pages in category
     """    
     counter = 0  
-    while driver.find_elements(By.CLASS_NAME,
-                            'dz'):
+    while driver.find_elements(By.CSS_SELECTOR,
+                           '#app-container > div.p > main > div > div > div > div > div > div > div > div > div > div > div > a'):
         counter += 1
-        print(counter)
         driver.get(f'https://www.detmir.ru/catalog/index/name/lego/page/{counter}/')
-        return counter
     return counter
 
 def get_html(url):
@@ -96,13 +94,13 @@ def scrape_data(card):
 
     Returns:
         dict: parsed data of a single product
-    """    
+    """   
     data = {}
     title = card.p.text
     url = card.get('href')
     id = url.strip('/').split('/')[-1]
     # id = re.findall('\d+', link)   # possible but gives a ['id'] 
-    prices_raw = card.select_one('a > div > div > div:nth-child(2) > div > div').text  #TODO put it in try-except
+    prices_raw = card.select_one('a > div > div > div:nth-child(2) > div > div').text 
     prices = unicodedata.normalize("NFKD", prices_raw).strip('').split(' ₽')  # ['249', ''] why??
     if len(prices) == 3:
         price = prices[1]
@@ -110,7 +108,6 @@ def scrape_data(card):
     else: 
         price = prices[0]
         promo_price = None
-    print(title)
     
     data = {'id': id, 'title': title, 'price': price, 'promo_price': promo_price, 'url': url}
         
@@ -120,8 +117,9 @@ def main():
     for city in cities:
         product_data = []
         choose_city(city)
-        count = get_page_count()
-        for i in range(4, 5):   # TODO: change
+        count = get_page_count()   # можно вытащить из цикла, чтобы не гонять лишний раз ф-цию, если не собираем исключительно продукты в наличии: у всех городов одно кол-во страниц   
+        for i in range(1, count):
+            print(f'Обрабатываю данные со страницы {i} из {count-1} ')    
             url = f'https://www.detmir.ru/catalog/index/name/lego/page/{i}/'
             html = get_html(url)
             soup = BeautifulSoup(html, 'lxml')
@@ -132,7 +130,9 @@ def main():
                     data = scrape_data(card)
                     product_data.append(data)
         document = city + '_' + 'products.csv'
+        print(f'Записываю данные по городу {city} в документ {document}')
         write_csv(product_data, document)
+    print('Готово!')
         
     
 
