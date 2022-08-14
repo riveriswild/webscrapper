@@ -44,7 +44,7 @@ def choose_city(city):
         city (str): city name
     """    
     el = driver.find_element(By.XPATH,
-            print(count)
+            
                             '//*[@id="app-container"]/div[2]/header/div[2]/div/div[1]/ul/li[1]/div/div/div[1]/div/span')
     el.click()
     print('Выбираю город...')
@@ -68,6 +68,7 @@ def get_page_count():
         int: number of pages in category
     """    
     counter = 0  
+    print("Оцениваю количество страниц. Я не завис, я просто медленный")
     while driver.find_elements(By.CSS_SELECTOR,
                            '#app-container > div.p > main > div > div > div > div > div > div > div > div > div > div > div > a'):
         counter += 1
@@ -113,7 +114,7 @@ def scrape_data(card):
         
     return data   
     
-def main():   
+def main(): 
     for city in cities:
         product_data = []
         choose_city(city)
