@@ -9,8 +9,7 @@ import re
 import unicodedata
 
 cities = ['Санкт-Петербург и Ленинградская область', 'Москва и Московская область']
-# spb = 'Санкт-Петербург и Ленинградская область'  
-# msc = 'Москва и Московская область'
+
 
 def write_csv(products):
     """ generate csv file
@@ -19,7 +18,7 @@ def write_csv(products):
         products (dict): dictionary of products
     """    
     with open('products.csv', 'a') as f:
-        fields = ['id','title','city','price', 'promo_price', 'url']
+        fields = ['id','title','price', 'promo_price', 'url', 'city']
         writer = csv.DictWriter(f, delimiter=',', fieldnames=fields)
         writer.writeheader()
         
@@ -45,8 +44,7 @@ def choose_city(city):
     el = driver.find_element(By.XPATH,
                             '//*[@id="app-container"]/div[2]/header/div[2]/div/div[1]/ul/li[1]/div/div/div[1]/div/span')
     el.click()
-    print('clicked city select')
-    print(el.text)
+    print('Выбираю город...')
     driver.implicitly_wait(10)
     cities_list_el = driver.find_elements(By.CSS_SELECTOR, 'body > div > div > div > section > div > ul > li > ul > li')
     for option in cities_list_el:
@@ -56,7 +54,7 @@ def choose_city(city):
         else:
             print('error')
     driver.implicitly_wait(10)
-    print("city now", el.text)
+    print("Выбран город:", el.text)
     return
 
 def get_page_count():
@@ -66,13 +64,12 @@ def get_page_count():
     Returns:
         int: number of pages in category
     """    
-    counter = 0  
-    while driver.find_elements(By.CLASS_NAME,
-                            'dz'):
+    counter = 0   
+    print("Оцениваю количество страниц. Я не завис, я просто медленный")
+    while driver.find_elements(By.CSS_SELECTOR,
+                           '#app-container > div.p > main > div > div > div > div > div > div > div > div > div > div > div > a'):
         counter += 1
-        print(counter)
         driver.get(f'https://www.detmir.ru/catalog/index/name/lego/page/{counter}/')
-        return counter
     return counter
 
 def get_html(url):
@@ -92,6 +89,7 @@ def scrape_data(card, city):
 
     Args:
         card (str): data of a single product
+        city (str): city name
 
     Returns:
         dict: parsed data of a single product
@@ -110,9 +108,8 @@ def scrape_data(card, city):
     else: 
         price = prices[0]
         promo_price = None
-    print(title)
     
-    data = {'id': id, 'title': title, 'city': city, 'price': price, 'promo_price': promo_price, 'url': url}
+    data = {'id': id, 'title': title, 'price': price, 'promo_price': promo_price, 'url': url, 'city': city}
         
     return data
     
@@ -122,7 +119,8 @@ def main():
     for city in cities:
         choose_city(city)
         count = get_page_count()
-        for i in range(4, 5):   # TODO: change
+        for i in range(1, count):  
+            print(f'Обрабатываю данные со страницы {i} из {count-1} ')
             url = f'https://www.detmir.ru/catalog/index/name/lego/page/{i}/'
             html = get_html(url)
             soup = BeautifulSoup(html, 'lxml')
@@ -132,40 +130,10 @@ def main():
             for card in cards_clean:   
                     data = scrape_data(card, city)
                     product_data.append(data)
-        # data = [el for el in product_data if el != {}]
-        # print(data)
-        write_csv(product_data)
+    print('Записываю данные...')
+    write_csv(product_data)
+    print('Готово!')
             
-    # choose_city(spb)
-    # count = get_page_count()
-    # for i in range(4, 5):   # TODO: change
-    #     url = f'https://www.detmir.ru/catalog/index/name/lego/page/{i}/'
-    #     html = get_html(url)
-    #     soup = BeautifulSoup(html, 'lxml')
-    #     # main_cards = soup.select()
-    #     cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
-    #     print(len(cards))
-    #     for card in cards:
-    #         data = scrape_data(card, spb)
-    #         product_data.append(data)
-    # choose_city(msc)
-    # count = get_page_count()
-    # for i in range(4, 5):   # TODO: change
-    #     url = f'https://www.detmir.ru/catalog/index/name/lego/page/{i}/'
-    #     html = get_html(url)
-    #     soup = BeautifulSoup(html, 'lxml')
-    #     cards = soup.select('#app-container > div.p > main > div > div > div > div > div > div > div > div > div > div > div > a')
-    #     # cards = soup.find_all('a', href=re.compile('product/index/id/')) # TODO products from promos!!! not lego
-    #     cards_clean = [card for card in cards if 'LEGO' in card.text] # TODO still bad for performance but a bit better; fix if possible
-    #     for card in cards_clean:   
-    #             data = scrape_data(card, msc)
-    #             product_data.append(data)
-    # # data = [el for el in product_data if el != {}]
-    # # print(data)
-    # write_csv(product_data)
-        
-    
-
 
 if __name__ == '__main__':
     main()
