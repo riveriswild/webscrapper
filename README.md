@@ -46,7 +46,7 @@ python wscrapper.py
 Для запуска версии 2 (данные сохранятся в отдельные файлы по городам)
 
 ```bash
-cd webscrapper_v1
+cd webscrapper_v2
 python wscrapper.py
 
 ```
